@@ -29,9 +29,10 @@ export function AuthProvider({ children }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      fetchProfile(session?.user?.id);
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      // אסור לקרוא ל-supabase בתוך ה-callback עצמו (deadlock ידוע) - דוחים לטיק הבא
+      setTimeout(() => fetchProfile(newSession?.user?.id), 0);
     });
 
     return () => subscription.unsubscribe();

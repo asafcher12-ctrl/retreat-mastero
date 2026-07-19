@@ -67,7 +67,12 @@ export default function LoginScreen() {
           email: email.trim(),
           password,
         });
-        if (error) throw new Error('פרטי התחברות שגויים');
+        if (error) {
+          if (error.message?.includes('not confirmed')) {
+            throw new Error('האימייל עדיין לא אומת - לחצו על הקישור שנשלח אליכם במייל ונסו שוב');
+          }
+          throw new Error('פרטי התחברות שגויים');
+        }
       }
     });
 
