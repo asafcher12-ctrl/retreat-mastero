@@ -89,4 +89,4 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=...
 - [x] תוכנית אמנותית
 - [x] המלצות קנייה
 - [x] רשימת ציוד
-- [ ] דיפלוי ל-Vercel
+- [x] דיפלוי ל-Vercel - https://retreat-mastero.vercel.app
