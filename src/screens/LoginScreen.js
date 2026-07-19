@@ -8,12 +8,15 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  ImageBackground,
   useWindowDimensions,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { colors, shared } from '../lib/theme';
 
-// כניסה/הרשמה: טופס + כניסה חברתית (Google / Apple / Facebook)
+const BG = require('../../assets/login-bg.jpg');
+
+// כניסה/הרשמה על רקע תמונת הכנרת: טופס + כניסה עם Google
 export default function LoginScreen() {
   const { width } = useWindowDimensions();
   const wide = width >= 768;
@@ -79,10 +82,10 @@ export default function LoginScreen() {
       setMessage({ type: 'info', text: 'קישור התחברות נשלח למייל - בדקו את תיבת הדואר' });
     });
 
-  const oauth = (provider) =>
+  const googleSignIn = () =>
     run(async () => {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: 'google',
         options: Platform.OS === 'web' ? { redirectTo: window.location.origin } : {},
       });
       if (error) throw error;
@@ -168,72 +171,79 @@ export default function LoginScreen() {
 
   const social = (
     <View style={styles.socialCol}>
-      <TouchableOpacity style={styles.socialButton} onPress={() => oauth('google')} disabled={busy}>
+      <TouchableOpacity style={styles.socialButton} onPress={googleSignIn} disabled={busy}>
         <Text style={[styles.socialIcon, { color: '#DB4437' }]}>G</Text>
         <Text style={styles.socialText}>המשך עם Google</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.socialButton} onPress={() => oauth('apple')} disabled={busy}>
-        <Text style={[styles.socialIcon, { color: '#111' }]}>A</Text>
-        <Text style={styles.socialText}>המשך עם Apple</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.socialButton} onPress={() => oauth('facebook')} disabled={busy}>
-        <Text style={[styles.socialIcon, { color: '#1877F2' }]}>f</Text>
-        <Text style={styles.socialText}>המשך עם Facebook</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
-    <KeyboardAvoidingView
-      style={[shared.screen, { backgroundColor: '#fff' }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={[
-          shared.container,
-          { flexGrow: 1, justifyContent: 'center', maxWidth: 960 },
-        ]}
+    <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Text style={styles.bigTitle}>{isSignup ? 'הרשמה' : 'התחברות'}</Text>
-        <TouchableOpacity
-          onPress={() => {
-            setMode(isSignup ? 'signin' : 'signup');
-            setMessage(null);
-          }}
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }}
         >
-          <Text style={[shared.mutedText, { textAlign: 'center', marginBottom: 32 }]}>
-            {isSignup ? 'כבר יש לכם חשבון? ' : 'אין לכם חשבון? '}
-            <Text style={styles.link}>{isSignup ? 'התחברות' : 'הרשמה'}</Text>
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.overlayCard}>
+            <Text style={styles.bigTitle}>{isSignup ? 'הרשמה' : 'התחברות'}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setMode(isSignup ? 'signin' : 'signup');
+                setMessage(null);
+              }}
+            >
+              <Text style={[shared.mutedText, { textAlign: 'center', marginBottom: 28 }]}>
+                {isSignup ? 'כבר יש לכם חשבון? ' : 'אין לכם חשבון? '}
+                <Text style={styles.link}>{isSignup ? 'התחברות' : 'הרשמה'}</Text>
+              </Text>
+            </TouchableOpacity>
 
-        {wide ? (
-          <View style={styles.wideRow}>
-            {form}
-            <View style={styles.dividerCol}>
-              <View style={styles.vLine} />
-              <Text style={[shared.mutedText, { marginVertical: 8 }]}>או</Text>
-              <View style={styles.vLine} />
-            </View>
-            {social}
+            {wide ? (
+              <View style={styles.wideRow}>
+                {form}
+                <View style={styles.dividerCol}>
+                  <View style={styles.vLine} />
+                  <Text style={[shared.mutedText, { marginVertical: 8 }]}>או</Text>
+                  <View style={styles.vLine} />
+                </View>
+                {social}
+              </View>
+            ) : (
+              <View>
+                {form}
+                <View style={styles.hDividerRow}>
+                  <View style={styles.hLine} />
+                  <Text style={[shared.mutedText, { marginHorizontal: 12 }]}>או</Text>
+                  <View style={styles.hLine} />
+                </View>
+                {social}
+              </View>
+            )}
           </View>
-        ) : (
-          <View>
-            {form}
-            <View style={styles.hDividerRow}>
-              <View style={styles.hLine} />
-              <Text style={[shared.mutedText, { marginHorizontal: 12 }]}>או</Text>
-              <View style={styles.hLine} />
-            </View>
-            {social}
-          </View>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  overlayCard: {
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 20,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    maxWidth: 920,
+    width: '100%',
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
   bigTitle: {
     fontSize: 36,
     fontWeight: '800',
@@ -281,7 +291,7 @@ const styles = StyleSheet.create({
   },
   lineInput: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#cbd5e1',
     paddingVertical: 12,
     fontSize: 15,
     color: colors.text,
@@ -299,7 +309,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: '#94a3b8',
     marginLeft: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -320,6 +330,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1f2937',
     paddingVertical: 14,
     alignItems: 'center',
+    borderRadius: 6,
   },
   darkButtonText: {
     color: '#fff',
@@ -335,6 +346,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     marginBottom: 14,
     backgroundColor: '#fff',
+    borderRadius: 6,
   },
   socialIcon: {
     fontSize: 17,
