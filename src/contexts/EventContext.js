@@ -80,13 +80,12 @@ export function EventProvider({ children }) {
 
   const createEvent = useCallback(
     async (name, startsAt) => {
-      const { data, error } = await supabase
-        .from('events')
-        .insert({ name, starts_at: startsAt || null })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('create_event', {
+        event_name: name,
+        event_starts_at: startsAt || null,
+      });
       if (error) throw error;
-      await selectEvent(data.id);
+      await selectEvent(data);
       return data;
     },
     [selectEvent]

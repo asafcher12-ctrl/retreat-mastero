@@ -195,6 +195,31 @@ begin
 end;
 $$;
 
+-- יצירת אירוע (למנהלי אירועים / מנהל גדול).
+-- דרך פונקציה ולא INSERT ישיר, כי החזרת השורה שנוצרה נופלת על מדיניות ה-SELECT
+-- לפני שהטריגר מספיק לצרף את היוצר כחבר.
+create or replace function public.create_event(event_name text, event_starts_at date default null)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  ev_id uuid;
+begin
+  if not exists (
+    select 1 from profiles
+    where id = auth.uid() and (is_event_manager or is_super_admin)
+  ) then
+    raise exception 'אין הרשאה ליצור אירוע';
+  end if;
+  insert into events (name, starts_at, created_by)
+  values (event_name, event_starts_at, auth.uid())
+  returning id into ev_id;
+  return ev_id;
+end;
+$$;
+
 -- שינוי תפקיד של חבר אירוע (מנהל אירוע בלבד)
 create or replace function public.set_member_role(member_id uuid, new_role text)
 returns void
