@@ -7,17 +7,27 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { colors, shared } from '../lib/theme';
 
-// כניסה באימייל+סיסמה או בקישור קסם (magic link)
+// כניסה/הרשמה: טופס + כניסה חברתית (Google / Apple / Facebook)
 export default function LoginScreen() {
+  const { width } = useWindowDimensions();
+  const wide = width >= 768;
+
+  const [mode, setMode] = useState('signup'); // signup | signin
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState('signin'); // signin | signup
+  const [agreed, setAgreed] = useState(false);
   const [message, setMessage] = useState(null); // {type: 'error'|'info', text}
   const [busy, setBusy] = useState(false);
+
+  const isSignup = mode === 'signup';
 
   const run = async (fn) => {
     setMessage(null);
@@ -31,31 +41,36 @@ export default function LoginScreen() {
     }
   };
 
-  const signIn = () =>
+  const submit = () =>
     run(async () => {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (error) throw new Error('פרטי התחברות שגויים');
-    });
-
-  const signUp = () =>
-    run(async () => {
-      if (password.length < 6) throw new Error('סיסמה חייבת להכיל לפחות 6 תווים');
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-      });
-      if (error) throw error;
-      if (!data.session) {
-        setMessage({ type: 'info', text: 'נשלח מייל אימות - בדקו את תיבת הדואר' });
+      if (!email.trim()) throw new Error('נא להזין אימייל');
+      if (isSignup) {
+        if (!firstName.trim()) throw new Error('נא להזין שם פרטי');
+        if (password.length < 6) throw new Error('סיסמה חייבת להכיל לפחות 6 תווים');
+        if (!agreed) throw new Error('יש לאשר את תנאי השימוש');
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: { display_name: `${firstName.trim()} ${lastName.trim()}`.trim() },
+          },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          setMessage({ type: 'info', text: 'נשלח מייל אימות - בדקו את תיבת הדואר' });
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) throw new Error('פרטי התחברות שגויים');
       }
     });
 
   const magicLink = () =>
     run(async () => {
-      if (!email.trim()) throw new Error('נא להזין אימייל');
+      if (!email.trim()) throw new Error('נא להזין אימייל ואז ללחוץ שוב');
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: Platform.OS === 'web' ? { emailRedirectTo: window.location.origin } : {},
@@ -64,75 +79,270 @@ export default function LoginScreen() {
       setMessage({ type: 'info', text: 'קישור התחברות נשלח למייל - בדקו את תיבת הדואר' });
     });
 
+  const oauth = (provider) =>
+    run(async () => {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: Platform.OS === 'web' ? { redirectTo: window.location.origin } : {},
+      });
+      if (error) throw error;
+    });
+
+  const form = (
+    <View style={styles.formCol}>
+      {isSignup ? (
+        <>
+          <TextInput
+            style={styles.lineInput}
+            placeholder="שם פרטי"
+            placeholderTextColor={colors.muted}
+            value={firstName}
+            onChangeText={setFirstName}
+          />
+          <TextInput
+            style={styles.lineInput}
+            placeholder="שם משפחה"
+            placeholderTextColor={colors.muted}
+            value={lastName}
+            onChangeText={setLastName}
+          />
+        </>
+      ) : null}
+      <TextInput
+        style={styles.lineInput}
+        placeholder="אימייל"
+        placeholderTextColor={colors.muted}
+        autoCapitalize="none"
+        autoComplete="email"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+      />
+      <TextInput
+        style={styles.lineInput}
+        placeholder="סיסמה"
+        placeholderTextColor={colors.muted}
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        onSubmitEditing={submit}
+      />
+
+      {isSignup ? (
+        <TouchableOpacity style={styles.termsRow} onPress={() => setAgreed(!agreed)}>
+          <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
+            {agreed ? <Text style={styles.checkMark}>✓</Text> : null}
+          </View>
+          <Text style={shared.mutedText}>
+            אני מסכים/ה <Text style={styles.link}>לתנאי השימוש</Text>
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+
+      {message ? (
+        <Text
+          style={[
+            shared.errorText,
+            message.type === 'info' && { color: colors.success },
+          ]}
+        >
+          {message.text}
+        </Text>
+      ) : null}
+
+      <TouchableOpacity style={styles.darkButton} onPress={submit} disabled={busy}>
+        <Text style={styles.darkButtonText}>
+          {busy ? '...' : isSignup ? 'הרשמה' : 'התחברות'}
+        </Text>
+      </TouchableOpacity>
+
+      {!isSignup ? (
+        <TouchableOpacity onPress={magicLink} disabled={busy}>
+          <Text style={[styles.link, { textAlign: 'center', marginTop: 12 }]}>
+            שליחת קישור התחברות למייל
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+
+  const social = (
+    <View style={styles.socialCol}>
+      <TouchableOpacity style={styles.socialButton} onPress={() => oauth('google')} disabled={busy}>
+        <Text style={[styles.socialIcon, { color: '#DB4437' }]}>G</Text>
+        <Text style={styles.socialText}>המשך עם Google</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.socialButton} onPress={() => oauth('apple')} disabled={busy}>
+        <Text style={[styles.socialIcon, { color: '#111' }]}>A</Text>
+        <Text style={styles.socialText}>המשך עם Apple</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.socialButton} onPress={() => oauth('facebook')} disabled={busy}>
+        <Text style={[styles.socialIcon, { color: '#1877F2' }]}>f</Text>
+        <Text style={styles.socialText}>המשך עם Facebook</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <KeyboardAvoidingView
-      style={shared.screen}
+      style={[shared.screen, { backgroundColor: '#fff' }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={[shared.container, { flexGrow: 1, justifyContent: 'center' }]}>
-        <Text style={[shared.title, { textAlign: 'center', fontSize: 28 }]}>ריטריט כנרת 🏕️</Text>
-        <Text style={[shared.mutedText, { textAlign: 'center', marginBottom: 24 }]}>
-          ניהול קמפינג וטיולים
-        </Text>
+      <ScrollView
+        contentContainerStyle={[
+          shared.container,
+          { flexGrow: 1, justifyContent: 'center', maxWidth: 960 },
+        ]}
+      >
+        <Text style={styles.bigTitle}>{isSignup ? 'הרשמה' : 'התחברות'}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            setMode(isSignup ? 'signin' : 'signup');
+            setMessage(null);
+          }}
+        >
+          <Text style={[shared.mutedText, { textAlign: 'center', marginBottom: 32 }]}>
+            {isSignup ? 'כבר יש לכם חשבון? ' : 'אין לכם חשבון? '}
+            <Text style={styles.link}>{isSignup ? 'התחברות' : 'הרשמה'}</Text>
+          </Text>
+        </TouchableOpacity>
 
-        <View style={shared.card}>
-          <TextInput
-            style={shared.input}
-            placeholder="אימייל"
-            placeholderTextColor={colors.muted}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TextInput
-            style={shared.input}
-            placeholder="סיסמה"
-            placeholderTextColor={colors.muted}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            onSubmitEditing={mode === 'signin' ? signIn : signUp}
-          />
-
-          {message ? (
-            <Text
-              style={[
-                shared.errorText,
-                message.type === 'info' && { color: colors.success },
-              ]}
-            >
-              {message.text}
-            </Text>
-          ) : null}
-
-          {mode === 'signin' ? (
-            <TouchableOpacity style={shared.button} onPress={signIn} disabled={busy}>
-              <Text style={shared.buttonText}>{busy ? '...' : 'התחברות'}</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={shared.button} onPress={signUp} disabled={busy}>
-              <Text style={shared.buttonText}>{busy ? '...' : 'הרשמה'}</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity style={shared.buttonSecondary} onPress={magicLink} disabled={busy}>
-            <Text style={shared.buttonSecondaryText}>שליחת קישור התחברות למייל</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {
-              setMode(mode === 'signin' ? 'signup' : 'signin');
-              setMessage(null);
-            }}
-          >
-            <Text style={[shared.mutedText, { textAlign: 'center', marginTop: 8 }]}>
-              {mode === 'signin' ? 'אין לכם חשבון? הרשמה' : 'יש לכם חשבון? התחברות'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {wide ? (
+          <View style={styles.wideRow}>
+            {form}
+            <View style={styles.dividerCol}>
+              <View style={styles.vLine} />
+              <Text style={[shared.mutedText, { marginVertical: 8 }]}>או</Text>
+              <View style={styles.vLine} />
+            </View>
+            {social}
+          </View>
+        ) : (
+          <View>
+            {form}
+            <View style={styles.hDividerRow}>
+              <View style={styles.hLine} />
+              <Text style={[shared.mutedText, { marginHorizontal: 12 }]}>או</Text>
+              <View style={styles.hLine} />
+            </View>
+            {social}
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  bigTitle: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  wideRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'stretch',
+  },
+  formCol: {
+    flex: 1,
+    paddingHorizontal: 16,
+    maxWidth: 420,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  socialCol: {
+    flex: 1,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    maxWidth: 420,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  dividerCol: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vLine: {
+    flex: 1,
+    width: 1,
+    backgroundColor: colors.border,
+  },
+  hDividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  hLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  lineInput: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: colors.text,
+    textAlign: 'right',
+    marginBottom: 20,
+    ...(Platform.OS === 'web' ? { outlineStyle: 'none' } : {}),
+  },
+  termsRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
+  },
+  checkMark: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  link: {
+    color: '#2563eb',
+  },
+  darkButton: {
+    backgroundColor: '#1f2937',
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  darkButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  socialButton: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    paddingVertical: 13,
+    marginBottom: 14,
+    backgroundColor: '#fff',
+  },
+  socialIcon: {
+    fontSize: 17,
+    fontWeight: '800',
+    marginLeft: 10,
+  },
+  socialText: {
+    fontSize: 15,
+    color: colors.text,
+  },
+});
