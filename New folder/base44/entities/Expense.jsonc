@@ -1,0 +1,26 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "user_id",
+    "amount"
+  ]
+}

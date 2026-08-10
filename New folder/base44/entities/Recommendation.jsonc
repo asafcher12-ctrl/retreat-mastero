@@ -1,0 +1,25 @@
+{
+  "name": "Recommendation",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "product_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "link": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "product_name"
+  ]
+}

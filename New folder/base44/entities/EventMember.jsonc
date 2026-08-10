@@ -1,0 +1,54 @@
+{
+  "name": "EventMember",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "event_manager",
+        "pioneer",
+        "viewer"
+      ],
+      "default": "pioneer"
+    },
+    "arrival_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "arrival_time": {
+      "type": "string"
+    },
+    "departure_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "departure_time": {
+      "type": "string"
+    },
+    "nights": {
+      "type": "number",
+      "default": 1
+    },
+    "adults": {
+      "type": "number",
+      "default": 1
+    },
+    "children": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "event_id",
+    "user_id"
+  ]
+}
