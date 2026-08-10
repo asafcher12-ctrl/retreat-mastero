@@ -1,0 +1,36 @@
+{
+  "name": "Meal",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "meal_type": {
+      "type": "string",
+      "enum": [
+        "breakfast",
+        "lunch",
+        "dinner"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "event_id",
+    "date",
+    "meal_type"
+  ]
+}

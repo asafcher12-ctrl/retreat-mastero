@@ -1,0 +1,32 @@
+{
+  "name": "ProgramItem",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "time": {
+      "type": "string"
+    },
+    "responsible_id": {
+      "type": "string"
+    },
+    "responsible_name": {
+      "type": "string"
+    },
+    "order": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "event_id",
+    "title"
+  ]
+}
