@@ -329,7 +329,18 @@ const authCompat = {
   },
 
   async loginViaEmailPassword(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const trimmedEmail = String(email || '').trim();
+    const trimmedPassword = String(password || '');
+
+    if (!trimmedEmail || !trimmedPassword) {
+      throw new Error('Email and password are required');
+    }
+
+    if (trimmedPassword.length < 6) {
+      throw new Error('Password must be at least 6 characters');
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password: trimmedPassword });
     if (error) throw error;
     return data.user;
   },
@@ -347,13 +358,24 @@ const authCompat = {
   },
 
   async register({ email, password, ...rest }) {
+    const trimmedEmail = String(email || '').trim();
+    const trimmedPassword = String(password || '');
+
+    if (!trimmedEmail || !trimmedPassword) {
+      throw new Error('Email and password are required');
+    }
+
+    if (trimmedPassword.length < 6) {
+      throw new Error('Password must be at least 6 characters');
+    }
+
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: trimmedEmail,
+      password: trimmedPassword,
       options: {
         data: {
           ...rest,
-          display_name: rest.display_name || rest.full_name || email.split('@')[0],
+          display_name: rest.display_name || rest.full_name || trimmedEmail.split('@')[0],
         },
       },
     });

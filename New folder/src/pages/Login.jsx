@@ -18,9 +18,16 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || password.length < 6) {
+      setError("הכנס אימייל תקין וסיסמה בת 6 תווים לפחות");
+      return;
+    }
+
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
+      await base44.auth.loginViaEmailPassword(trimmedEmail, password);
       window.location.href = next;
     } catch (err) {
       setError(err.message || "אימייל או סיסמה שגויים");
