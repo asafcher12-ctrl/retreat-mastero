@@ -24,6 +24,10 @@ export default function Login() {
       setError("הכנס אימייל תקין וסיסמה בת 6 תווים לפחות");
       return;
     }
+    if (!/^[\x00-\x7F]+$/.test(password)) {
+      setError("הסיסמה חייבת להכיל רק אותיות/ספרות באנגלית");
+      return;
+    }
 
     setLoading(true);
     try {

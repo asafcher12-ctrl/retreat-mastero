@@ -44,6 +44,9 @@ export default function LoginScreen() {
   const submit = () =>
     run(async () => {
       if (!email.trim()) throw new Error('נא להזין אימייל');
+      if (!/^[\x00-\x7F]+$/.test(password)) {
+        throw new Error('הסיסמה חייבת להכיל רק אותיות/ספרות באנגלית');
+      }
       if (isSignup) {
         if (password.length < 6) throw new Error('סיסמה חייבת להכיל לפחות 6 תווים');
         const { data, error } = await supabase.auth.signUp({

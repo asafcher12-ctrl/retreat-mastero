@@ -336,6 +336,10 @@ const authCompat = {
       throw new Error('Email and password are required');
     }
 
+    if (!/^[\x00-\x7F]+$/.test(trimmedPassword)) {
+      throw new Error('Password must contain only ASCII characters');
+    }
+
     if (trimmedPassword.length < 6) {
       throw new Error('Password must be at least 6 characters');
     }
@@ -363,6 +367,10 @@ const authCompat = {
 
     if (!trimmedEmail || !trimmedPassword) {
       throw new Error('Email and password are required');
+    }
+
+    if (!/^[\x00-\x7F]+$/.test(trimmedPassword)) {
+      throw new Error('Password must contain only ASCII characters');
     }
 
     if (trimmedPassword.length < 6) {
