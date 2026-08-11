@@ -1,17 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-import { Tent, Loader2, Check } from 'lucide-react';
+import { Tent, Loader2, Check, LogIn, UserPlus } from 'lucide-react';
 
 export default function Join() {
   const { code } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [status, setStatus] = useState('loading'); // loading | joined | already | viewer | notfound | error
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   useEffect(() => {
     (async () => {
+      try {
+        await base44.auth.me();
+        setIsLoggedIn(true);
+      } catch {
+        setIsLoggedIn(false);
+      }
+
       // find the event by invite code (works for anonymous viewers on a public app)
       let ev;
       try {
@@ -59,6 +67,25 @@ export default function Join() {
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center p-6" dir="rtl">
       <div className="max-w-md text-center bg-white rounded-3xl p-8 shadow-sm border border-stone-100">
+        {!isLoggedIn && (
+          <div className="mb-5 flex gap-2 justify-center">
+            <Link
+              to={`/login?next=${encodeURIComponent(window.location.pathname)}`}
+              className="inline-flex items-center gap-1 rounded-xl bg-stone-900 px-3 py-2 text-sm font-medium text-white hover:bg-stone-800"
+            >
+              <LogIn className="w-4 h-4" />
+              התחברות
+            </Link>
+            <Link
+              to={`/register?next=${encodeURIComponent(window.location.pathname)}`}
+              className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+            >
+              <UserPlus className="w-4 h-4" />
+              הרשמה
+            </Link>
+          </div>
+        )}
+
         <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
           {status === 'loading' ? (
             <Loader2 className="w-7 h-7 text-emerald-600 animate-spin" />
