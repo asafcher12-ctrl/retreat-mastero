@@ -68,14 +68,12 @@ function EventTabs() {
   );
 }
 
-// ניתוב לפי מצב: התחברות → הצטרפות לאירוע → אישור הגעה → האפליקציה
+// כל המשתמשים נכנסים ישירות לעמוד הבית; אין מסך התחברות/הרשמה בכניסה
 function Root() {
-  const { session, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const { event, membership, loading: eventLoading } = useEvent();
 
-  if (authLoading) return <Loading />;
-  if (!session) return <LoginScreen />;
-  if (eventLoading) return <Loading />;
+  if (authLoading || eventLoading) return <Loading />;
   if (!event) return <JoinEventScreen />;
   if (!membership?.arrival_at) return <ArrivalScreen />;
   return <EventTabs />;
