@@ -21,12 +21,9 @@ export default function LoginScreen() {
   const { width } = useWindowDimensions();
   const wide = width >= 768;
 
-  const [mode, setMode] = useState('signup'); // signup | signin
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [mode, setMode] = useState('signin'); // signup | signin
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [agreed, setAgreed] = useState(false);
   const [message, setMessage] = useState(null); // {type: 'error'|'info', text}
   const [busy, setBusy] = useState(false);
 
@@ -48,15 +45,10 @@ export default function LoginScreen() {
     run(async () => {
       if (!email.trim()) throw new Error('נא להזין אימייל');
       if (isSignup) {
-        if (!firstName.trim()) throw new Error('נא להזין שם פרטי');
         if (password.length < 6) throw new Error('סיסמה חייבת להכיל לפחות 6 תווים');
-        if (!agreed) throw new Error('יש לאשר את תנאי השימוש');
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: {
-            data: { display_name: `${firstName.trim()} ${lastName.trim()}`.trim() },
-          },
         });
         if (error) throw error;
         if (!data.session) {
@@ -98,24 +90,6 @@ export default function LoginScreen() {
 
   const form = (
     <View style={styles.formCol}>
-      {isSignup ? (
-        <>
-          <TextInput
-            style={styles.lineInput}
-            placeholder="שם פרטי"
-            placeholderTextColor={colors.muted}
-            value={firstName}
-            onChangeText={setFirstName}
-          />
-          <TextInput
-            style={styles.lineInput}
-            placeholder="שם משפחה"
-            placeholderTextColor={colors.muted}
-            value={lastName}
-            onChangeText={setLastName}
-          />
-        </>
-      ) : null}
       <TextInput
         style={styles.lineInput}
         placeholder="אימייל"
@@ -135,17 +109,6 @@ export default function LoginScreen() {
         onChangeText={setPassword}
         onSubmitEditing={submit}
       />
-
-      {isSignup ? (
-        <TouchableOpacity style={styles.termsRow} onPress={() => setAgreed(!agreed)}>
-          <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
-            {agreed ? <Text style={styles.checkMark}>✓</Text> : null}
-          </View>
-          <Text style={shared.mutedText}>
-            אני מסכים/ה <Text style={styles.link}>לתנאי השימוש</Text>
-          </Text>
-        </TouchableOpacity>
-      ) : null}
 
       {message ? (
         <Text
