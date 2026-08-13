@@ -1,10 +1,12 @@
 {
-  "enabledPlugins": {
-    "expo@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
-      "PowerShell(npm run web)"
+      "PowerShell(npm run web)",
+      "Bash(pkill -f \"expo start\")",
+      "Bash(pkill -f \"metro\")"
     ]
+  },
+  "enabledPlugins": {
+    "expo@claude-plugins-official": true
   }
 }
